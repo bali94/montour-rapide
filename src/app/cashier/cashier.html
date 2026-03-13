@@ -2,7 +2,7 @@
   <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold text-gray-800">Tableau de Bord de la Caisse</h1>
-      <div class="flex space-x-4">
+      <div class="flex flex-wrap gap-2">
         <button
           *ngIf="isAdmin()"
           [routerLink]="['/admin/companies']"

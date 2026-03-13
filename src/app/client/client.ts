@@ -80,7 +80,6 @@ export class ClientComponent implements OnInit {
         // Ensure default queue exists when client page loads
         // This is done here as createDefaultQueue now requires companyId
         this.firestoreService.createDefaultQueue(this.companyId, this.queueId, 'File Principale').then(queue => {
-          console.log('Default queue ensured:', queue);
         }).catch(error => {
           console.error('Error ensuring default queue:', error);
           // Potentially alert user or handle cases where default company/queue doesn't exist

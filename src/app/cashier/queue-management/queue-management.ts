@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, effect } from '@angular/core';
+import { Component, OnInit, signal, effect, ViewChildren, QueryList, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FirestoreService, Queue, Company } from '../../firestore'; // Import Company
@@ -21,6 +21,8 @@ export class QueueManagementComponent implements OnInit {
 
   queues = signal<Queue[]>([]);
   appBaseUrl: string = window.location.origin;
+
+  @ViewChildren('qrCodeElement') qrCodeElements!: QueryList<any>; // angularx-qrcode component
 
   constructor(private firestoreService: FirestoreService) {
     effect(() => {
@@ -55,9 +57,8 @@ export class QueueManagementComponent implements OnInit {
     });
   }
 
-  onCompanySelected(event: Event): void {
-    const selectElement = event.target as HTMLSelectElement;
-    this.selectedCompanyId.set(selectElement.value);
+  onCompanySelected(companyId: string): void {
+    this.selectedCompanyId.set(companyId);
   }
 
   async createNewQueue(): Promise<void> {
@@ -78,7 +79,6 @@ export class QueueManagementComponent implements OnInit {
         this.newQueuePrefix(),
         this.newQueueDescription()
       );
-      console.log('New queue created:', createdQueue);
       // Reset form fields
       this.newQueueName.set('');
       this.newQueuePrefix.set('');
@@ -96,6 +96,26 @@ export class QueueManagementComponent implements OnInit {
     }
     // QR code will now contain both companyId and queueId
     return `${this.appBaseUrl}/client?companyId=${companyId}&queueId=${queueId}`;
+  }
+
+  downloadQRCode(qrCodeComponent: any, queueName: string, queuePrefix?: string): void {
+    if (qrCodeComponent && qrCodeComponent.qrcElement && queuePrefix) {
+      // qrcElement is the native element (canvas)
+      const canvas = qrCodeComponent.qrcElement.nativeElement.querySelector('canvas');
+      if (canvas) {
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `${queuePrefix}-${queueName}-qrcode.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        alert('Could not find QR code canvas element.');
+      }
+    } else {
+      alert('QR code component not found.');
+    }
   }
 
   get selectedCompanyName(): string {

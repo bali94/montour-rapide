@@ -41,7 +41,6 @@ export class CompanyManagementComponent implements OnInit {
         this.newCompanyName(),
         this.newCompanyDescription()
       );
-      console.log('New company created:', createdCompany);
       // Reset form fields
       this.newCompanyName.set('');
       this.newCompanyDescription.set('');

@@ -69,28 +69,22 @@ export class CashierComponent implements OnInit, OnDestroy {
     });
     effect(() => { // Effect for when selectedCompanyId changes, fetch queues for that company - MOVED FROM ngOnInit
       const companyId = this.selectedCompanyId();
-      console.log('Effect [in constructor]: selectedCompanyId changed to:', companyId);
       if (companyId) {
         this.firestoreService.getCompanyQueues(companyId).subscribe({
           next: (queues) => {
-            console.log('Effect [in constructor]: Fetched queues for company', companyId, ':', queues);
             this.queues.set(queues);
             if (queues.length > 0 && (!this.selectedQueueId() || !queues.find(q => q.id === this.selectedQueueId()))) {
-              console.log('Effect [in constructor]: Defaulting selectedQueueId to first queue:', queues[0].id);
               this.selectedQueueId.set(queues[0].id || null);
             } else if (queues.length === 0) {
-              console.log('Effect [in constructor]: No queues found for company', companyId);
                 this.selectedQueueId.set(null);
             }
           },
           error: (err) => {
-            console.error("Effect [in constructor]: Error fetching queues for company:", companyId, err);
             this.queues.set([]);
             this.selectedQueueId.set(null);
           }
         });
       } else {
-        console.log('Effect [in constructor]: selectedCompanyId is null, clearing queues and tickets.');
         this.queues.set([]);
         this.selectedQueueId.set(null);
       }
@@ -102,10 +96,8 @@ export class CashierComponent implements OnInit, OnDestroy {
     this.userProfileSubscription = this.authService.userProfile$.subscribe(userProfile => {
       this.isAdmin.set(userProfile?.role === 'admin');
       if (userProfile && userProfile.role === 'agent' && userProfile.companyId) {
-        console.log('Agent logged in. Setting selectedCompanyId to:', userProfile.companyId);
         this.selectedCompanyId.set(userProfile.companyId);
       } else if (userProfile && userProfile.role === 'agent' && !userProfile.companyId) {
-        console.warn('Agent logged in but not assigned to any company.', userProfile);
         alert("You are an agent but not assigned to any company. Please contact your administrator.");
         this.router.navigate(['/login']);
       } else if (userProfile) {
@@ -117,12 +109,10 @@ export class CashierComponent implements OnInit, OnDestroy {
 
     this.firestoreService.getCompanies().subscribe({
       next: (companies) => {
-        console.log('Fetched companies:', companies);
         this.companies.set(companies);
         // If no company is selected yet (e.g., admin or agent without pre-selected company from profile)
         // and if there are companies, select the first one. This ensures *some* company is always shown for admins.
         if (!this.selectedCompanyId() && companies.length > 0) {
-          console.log('No company pre-selected, defaulting to first company:', companies[0].id);
           this.selectedCompanyId.set(companies[0].id || null);
         } else if (this.selectedCompanyId()) {
           console.log('Company already pre-selected by agent profile:', this.selectedCompanyId());
@@ -144,14 +134,12 @@ export class CashierComponent implements OnInit, OnDestroy {
     }
   }
 
-  onCompanySelected(event: Event): void {
-    const selectElement = event.target as HTMLSelectElement;
-    this.selectedCompanyId.set(selectElement.value);
+  onCompanySelected(companyId: string): void {
+    this.selectedCompanyId.set(companyId);
   }
 
-  onQueueSelected(event: Event): void {
-    const selectElement = event.target as HTMLSelectElement;
-    this.selectedQueueId.set(selectElement.value);
+  onQueueSelected(queueId: string): void {
+    this.selectedQueueId.set(queueId);
   }
 
   subscribeToQueueUpdates(companyId: string, queueId: string): void {
