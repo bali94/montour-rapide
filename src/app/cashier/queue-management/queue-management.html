@@ -1,0 +1,91 @@
+<div class="min-h-screen bg-gray-100 flex flex-col items-center p-4">
+  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl">
+    <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Gestion des Files d'Attente</h1>
+
+    <!-- Company Selection -->
+    <div class="mb-6 p-4 bg-gray-50 border-l-4 border-gray-300 rounded-lg shadow-sm">
+      <h2 class="text-xl font-semibold text-gray-700 mb-2">Sélectionner une Compagnie:</h2>
+      <select
+        id="company-select"
+        [ngModel]="selectedCompanyId()"
+        (ngModelChange)="onCompanySelected($event)"
+        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+      >
+        <option *ngIf="companies().length === 0" value="" disabled>Aucune compagnie disponible</option>
+        <option *ngFor="let company of companies()" [value]="company.id">{{ company.name }}</option>
+      </select>
+      <p *ngIf="!selectedCompanyId()" class="text-red-500 text-sm mt-2">Veuillez sélectionner une compagnie pour gérer les files.</p>
+    </div>
+
+    <!-- Create New Queue Form -->
+    <div class="mb-8 p-6 bg-blue-50 border-l-4 border-blue-500 rounded-lg shadow-sm">
+      <h2 class="text-xl font-semibold text-blue-800 mb-4">Créer une Nouvelle File sous <span class="font-bold">{{ selectedCompanyName }}</span></h2>
+      <form (ngSubmit)="createNewQueue()" class="space-y-4">
+        <div>
+          <label for="newQueueName" class="block text-gray-700 text-sm font-bold mb-2">Nom de la File:</label>
+          <input
+            type="text"
+            id="newQueueName"
+            [(ngModel)]="newQueueName"
+            name="newQueueName"
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            placeholder="Ex: Guichet A, Service Client"
+            required
+          />
+        </div>
+        <div>
+          <label for="newQueuePrefix" class="block text-gray-700 text-sm font-bold mb-2">Préfixe du Ticket:</label>
+          <input
+            type="text"
+            id="newQueuePrefix"
+            [(ngModel)]="newQueuePrefix"
+            name="newQueuePrefix"
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            placeholder="Ex: A, CS"
+            required
+          />
+        </div>
+        <div>
+          <label for="newQueueDescription" class="block text-gray-700 text-sm font-bold mb-2">Description (optionnel):</label>
+          <textarea
+            id="newQueueDescription"
+            [(ngModel)]="newQueueDescription"
+            name="newQueueDescription"
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            placeholder="Description de la file d'attente"
+            rows="3"
+          ></textarea>
+        </div>
+        <button
+          type="submit"
+          [disabled]="!selectedCompanyId()"
+          class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Créer la File
+        </button>
+      </form>
+    </div>
+
+    <!-- Existing Queues List -->
+    <div class="mb-8">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">Files d'Attente Existantes ({{ queues().length }}):</h2>
+      <div *ngIf="queues().length === 0" class="p-4 bg-gray-50 rounded-md text-center text-gray-500 italic">
+        Aucune file d'attente créée pour le moment.
+      </div>
+      <div *ngIf="queues().length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div *ngFor="let queue of queues()" class="bg-white p-5 rounded-lg shadow border border-gray-200">
+          <h3 class="text-lg font-bold text-gray-800 mb-2">{{ queue.name }} (ID: {{ queue.id }})</h3>
+          <p class="text-gray-600 mb-1">Préfixe: <span class="font-semibold">{{ queue.prefix }}</span></p>
+          <p *ngIf="queue.description" class="text-gray-600 mb-3">Description: {{ queue.description }}</p>
+          <p class="text-gray-600 mb-3">Tickets actuels: <span class="font-semibold">{{ queue.currentTicketNumber }}</span></p>
+
+          <div class="mt-4 text-center">
+            <h4 class="text-md font-semibold text-gray-700 mb-2">QR Code pour Client</h4>
+            <qrcode [qrdata]="getQRCodeUrl(queue.companyId, queue.id)" [width]="150" [errorCorrectionLevel]="'M'"></qrcode>
+            <p class="text-sm text-gray-500 mt-2 break-all">{{ getQRCodeUrl(queue.companyId, queue.id) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

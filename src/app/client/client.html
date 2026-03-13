@@ -1,0 +1,72 @@
+<div class="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+  <div *ngIf="!currentTicket()" class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Bienvenue à MonTour Facile</h1>
+    <p class="text-center text-gray-600 mb-8">
+      Sécurisez votre place dans la file d'attente en entrant votre prénom.
+    </p>
+
+    <div class="mb-4">
+      <label for="firstName" class="block text-gray-700 text-sm font-bold mb-2">Votre Prénom:</label>
+      <input
+        type="text"
+        id="firstName"
+        [(ngModel)]="firstName"
+        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        placeholder="Entrez votre prénom"
+        required
+      />
+    </div>
+
+    <button
+      (click)="prendreMonTour()"
+      class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full focus:outline-none focus:shadow-outline transition duration-150 ease-in-out"
+    >
+      Prendre mon tour
+    </button>
+  </div>
+
+  <div *ngIf="currentTicket()" class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg">
+    <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Votre Ticket</h1>
+    <div class="text-center mb-8">
+      <p class="text-gray-600 text-lg">Votre numéro:</p>
+      <p class="text-5xl font-extrabold text-blue-600">{{ currentTicket()?.fullTicketNumber }}</p>
+      <p class="text-gray-600 text-lg mt-4">Statut:
+        <span [ngClass]="{
+          'text-yellow-600': currentTicket()?.status === 'en attente',
+          'text-green-600': currentTicket()?.status === 'appelé',
+          'text-gray-500': currentTicket()?.status === 'terminé' || currentTicket()?.status === 'annulé'
+        }" class="font-semibold">
+          {{ currentTicket()?.status | uppercase }}
+        </span>
+      </p>
+    </div>
+
+    <div *ngIf="currentTicket()?.status === 'en attente' || currentTicket()?.status === 'appelé'" class="mb-8">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">Clients en attente</h2>
+      <div class="bg-gray-50 p-4 rounded-md h-64 overflow-y-auto">
+        <p *ngIf="waitingTickets().length === 0" class="text-gray-500 text-center">Pas de clients en attente.</p>
+        <ul *ngIf="waitingTickets().length > 0">
+          <li *ngFor="let ticket of waitingTickets()"
+              class="flex justify-between items-center py-2 px-3 mb-2 rounded-md"
+              [ngClass]="{
+                'bg-blue-100 border-l-4 border-blue-500 font-bold': ticket.id === currentTicket()?.id,
+                'bg-white border-b border-gray-200': ticket.id !== currentTicket()?.id
+              }">
+            <span class="text-gray-800">{{ ticket.firstName }}</span>
+            <span class="text-gray-600">{{ ticket.fullTicketNumber }}</span>
+          </li>
+        </ul>
+      </div>
+      <p class="text-center text-gray-600 mt-4">
+        Personnes devant vous: <span class="font-bold text-blue-600">{{ peopleAhead() }}</span>
+      </p>
+    </div>
+
+    <button
+      (click)="resetTicket()"
+      class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded w-full focus:outline-none focus:shadow-outline transition duration-150 ease-in-out"
+    >
+      Annuler mon ticket
+    </button>
+  </div>
+</div>
