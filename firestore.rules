@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions to fetch user role and company ID from their profile.
+    // Note: Each 'get' call within rules contributes to rule evaluation costs.
+    function getUserData(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data;
+    }
+
+    // Checks if the authenticated user has the 'admin' role.
+    function isAdmin() {
+      return request.auth != null && getUserData(request.auth.uid).role == 'admin';
+    }
+
+    // Checks if the authenticated user has the 'agent' role.
+    function isAgent() {
+      return request.auth != null && getUserData(request.auth.uid).role == 'agent';
+    }
+
+    // Checks if the authenticated user is an agent assigned to the specified company.
+    function isAgentOfCompany(companyId) {
+      return isAgent() && getUserData(request.auth.uid).companyId == companyId;
+    }
+
+    // 1. Users Collection (/users/{userId})
+    match /users/{userId} {
+      // Authenticated users can read their own profile data.
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // Admins can read all user profiles (e.g., for agent management).
+      allow read: if isAdmin();
+      // Admins can update any user profile (e.g., assign companyId to agents).
+      allow update: if isAdmin();
+      // Users can create their own profile upon first login (only if it doesn't exist).
+      // Ensures data integrity: uid, email, timestamps must match auth and request.
+      allow create: if request.auth != null
+                        && request.auth.uid == userId
+                        && request.resource.data.uid == userId
+                        && request.resource.data.email == request.auth.token.email
+                        && request.resource.data.createdAt == request.time
+                        && request.resource.data.updatedAt == request.time
+                        // Ensures the initial role is valid ('agent' or 'admin').
+                        && (request.resource.data.role == 'agent' || request.resource.data.role == 'admin');
+    }
+
+    // 2. Companies Collection (/companies/{companyId})
+    match /companies/{companyId} {
+      // All authenticated users (admins, agents) can read company details
+      // (e.g., for selection dropdowns in cashier dashboard).
+      allow read: if request.auth != null;
+      // Only Admins can create, update, or delete companies.
+      allow create, update, delete: if isAdmin();
+    }
+
+    // 3. Queues Subcollection (/companies/{companyId}/queues/{queueId})
+    match /companies/{companyId}/queues/{queueId} {
+      // Authenticated users (admins, agents) can read queues for their company (admins can read all).
+      allow read: if isAdmin() || isAgentOfCompany(companyId);
+      // Unauthenticated clients can read queues (e.g., to display the queue name on the client page).
+      allow read: if true;
+      allow create, update, delete: if isAdmin(); // Corrected and clean
+    }
+
+    // 4. Tickets Subcollection (/companies/{companyId}/queues/{queueId}/tickets/{ticketId})
+    match /companies/{companyId}/queues/{queueId}/tickets/{ticketId} {
+      // Removed allow create: as it's handled by Cloud Function (Correct)
+
+      // Allow cashiers (admins or agents of the specific company) to update ticket status.
+      allow update: if (isAdmin() || isAgentOfCompany(companyId))
+                      && request.resource.data.status in ['appelé', 'terminé', 'annulé']
+                      // Only allow specific fields to be updated by cashiers (status, timestamps).
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'calledAt', 'completedAt', 'updatedAt'])
+                      // Ensure `calledAt` or `completedAt` are set when status transitions appropriately.
+                      && (request.resource.data.status != resource.data.status
+                          ? (request.resource.data.status == 'appelé' && request.resource.data.calledAt is timestamp)
+                            || ((request.resource.data.status == 'terminé' || request.resource.data.status == 'annulé') && request.resource.data.completedAt is timestamp)
+                          : true);
+
+      // Read permissions for tickets:
+      // Admins and agents can read all tickets within their scope.
+      allow read: if isAdmin() || isAgentOfCompany(companyId);
+
+      // Unauthenticated clients need to read their own ticket status (`getTicketById`)
+      // and the list of waiting tickets (`getQueueTickets`).
+      // WARNING: This makes ALL ticket data (including `firstName`) publicly readable
+      // if the document path is known. This is required for your current app behavior
+      // but is a **major privacy concern**.
+      allow get, list: if true;
+    }
+
+    // Default deny rule: any collection/document not explicitly matched above will be denied access.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

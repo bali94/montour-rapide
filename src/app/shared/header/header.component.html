@@ -1,0 +1,32 @@
+<header class="bg-gray-800 text-white p-4 shadow-md">
+  <div class="container mx-auto flex justify-between items-center">
+    <div class="flex items-center">
+      <a routerLink="/" class="text-xl font-bold">MonTourRapide</a>
+      <nav class="ml-8">
+        <ul class="flex space-x-4">
+          <li *ngIf="currentUser()?.role === 'admin' || currentUser()?.role === 'agent'">
+            <a routerLink="/caisse" class="hover:text-gray-300">Caisse</a>
+          </li>
+          <li *ngIf="currentUser()?.role === 'admin'">
+            <a routerLink="/admin/companies" class="hover:text-gray-300">Gestion Compagnies</a>
+          </li>
+          <li *ngIf="currentUser()?.role === 'admin'">
+            <a routerLink="/admin/agents" class="hover:text-gray-300">Gestion Agents</a>
+          </li>
+          <li *ngIf="currentUser()?.role === 'admin'">
+            <a routerLink="/queue-management" class="hover:text-gray-300">Gestion Files</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+    <div class="flex items-center">
+      <span *ngIf="currentUser()" class="mr-4 text-sm">Bienvenue, <span class="font-semibold">{{ currentUser()?.email }}</span></span>
+      <button *ngIf="currentUser()" (click)="logout()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out">
+        Déconnexion
+      </button>
+      <a *ngIf="!currentUser()" routerLink="/login" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out">
+        Connexion
+      </a>
+    </div>
+  </div>
+</header>

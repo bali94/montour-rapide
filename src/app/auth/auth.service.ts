@@ -55,7 +55,9 @@ export class AuthService {
       throw error;
     }
   }
-
+  getUserProfile(uid: string): Observable<any> {
+    return this.firestoreService.getUserProfile(uid);
+  }
   async logout(): Promise<void> {
     try {
       await signOut(this.auth);
